@@ -17,7 +17,7 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.rodrigo.tasktracker",
+    "appId": "io.github.rsebgarcia.quicktasktracker",
     "productName": "Task Tracker",
     "asar": true,
     "files": [
@@ -39,7 +39,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Task Tracker"
+      "shortcutName": "Task Tracker",
+      "deleteAppDataOnUninstall": false
     }
   },
   "keywords": [

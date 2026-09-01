@@ -177,6 +177,35 @@ function setAutoStart(enabled) {
   app.setLoginItemSettings({ openAtLogin: !!enabled, path: autoStartTarget(), args: [] });
 }
 
+/**
+ * Deja el arranque automatico coherente con la realidad:
+ *
+ *  - Instalacion nueva: se activa.
+ *  - Reinstalada o movida de carpeta: la entrada vieja apunta a un .exe que ya no existe,
+ *    asi que se re-apunta al actual. (Al reinstalar, el config.json sobrevive y por eso
+ *    esto ya no cuenta como primer arranque.)
+ *  - Apagado a proposito desde la bandeja: se respeta, no se vuelve a prender.
+ */
+function syncAutoStart() {
+  if (!app.isPackaged) return; // en desarrollo registraria electron.exe
+
+  if (config.isFirstRun()) {
+    setAutoStart(true);
+    return;
+  }
+
+  const settings = app.getLoginItemSettings();
+  if (!settings.openAtLogin) return; // el usuario lo apago: es su decision
+
+  const target = autoStartTarget().toLowerCase();
+  const items = settings.launchItems || [];
+  const desactualizado = items.some(function (i) {
+    return i.path && i.path.toLowerCase() !== target;
+  });
+
+  if (desactualizado || !items.length) setAutoStart(true);
+}
+
 function buildTrayMenu() {
   const s = config.getShortcuts();
   return Menu.buildFromTemplate([
@@ -514,9 +543,7 @@ if (!app.requestSingleInstanceLock()) {
     store.init(DATA_DIR);
     config.init(DATA_DIR);
     pruneTemporary(); // arranca limpio: temporales que quedaron sin tareas se van
-    // Primera instalacion: queda en la bandeja desde que prende la PC. Despues es
-    // decision del usuario, desde el tilde del menu de la bandeja.
-    if (app.isPackaged && config.isFirstRun()) setAutoStart(true);
+    syncAutoStart();
 
     boardColumns = columnsForBoard().length;
     createWindow();
