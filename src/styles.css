@@ -1,0 +1,725 @@
+/* ============================================================
+   Task Tracker — tema oscuro minimalista
+   La ventana de Electron es transparente: el "marco" real es .bar / .panel,
+   y el aire alrededor existe para que se vea la sombra.
+   ============================================================ */
+
+:root {
+  --bg:            #17191f;
+  --bg-soft:       #1d2027;
+  --bg-card:       #22252d;
+  --bg-card-hover: #272b34;
+  --line:          rgba(255, 255, 255, 0.085);
+  --line-strong:   rgba(255, 255, 255, 0.16);
+  --text:          #e8eaf0;
+  --text-dim:      #9298a8;
+  --text-faint:    #62687a;
+  /* La sombra tiene que ENTRAR en el aire transparente de la ventana (--win-pad), o el borde
+     de la ventana la corta en seco y se ve una linea recta. Alcance hacia abajo = offset+blur. */
+  --win-pad:       28px;
+  --shadow:        0 6px 18px rgba(0, 0, 0, 0.5), 0 2px 5px rgba(0, 0, 0, 0.32);
+  --radius:        14px;
+  --accent:        #5b8cff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.view { display: none; width: 100%; height: 100%; }
+body.mode-capture #view-capture { display: flex; }
+body.mode-board   #view-board   { display: flex; }
+
+/* ============================ MODO CAPTURA ============================ */
+
+#view-capture {
+  align-items: center;
+  justify-content: center;
+  padding: var(--win-pad);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 480px;
+  height: 56px;
+  padding: 0 16px 0 18px;
+  background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.bar-glyph {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.16);
+}
+
+#capture-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 0.1px;
+  user-select: text;
+  cursor: text;
+}
+
+#capture-input::placeholder { color: var(--text-faint); }
+
+.bar-kbd,
+kbd {
+  flex: none;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ============================ MODO TABLERO ============================ */
+
+#view-board {
+  align-items: center;
+  justify-content: center;
+  padding: var(--win-pad);
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 120px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: 46px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+}
+
+.head-left { display: flex; align-items: center; gap: 9px; }
+
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.16);
+}
+
+.panel-head h1 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.total {
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.head-hint {
+  margin: 0 8px 0 4px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.icon-btn {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+/* Ocultar, no cerrar: hover neutro, nada de rojo de "vas a perder algo". */
+.icon-btn:hover { background: rgba(255, 255, 255, 0.09); color: var(--text); }
+
+/* ---- columnas ---- */
+
+.columns {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px;
+  overflow-x: auto; /* si hay mas categorias de las que entran en pantalla */
+  overflow-y: hidden;
+}
+
+.columns::-webkit-scrollbar { height: 6px; }
+.columns::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 132px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.018);
+  transition: background 0.14s, border-color 0.14s;
+}
+
+/* El color de cada columna lo pone el renderer desde el config (--accent inline). */
+
+/* Categoria temporal: borde punteado para que se lea de un vistazo que no es permanente. */
+.col-temp { border-style: dashed; }
+.col-temp .col-name { color: var(--text-faint); }
+
+.col.drop-target {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--accent);
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 10px 11px 9px;
+}
+
+.col-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.col-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.col-count {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  padding: 0 8px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.col-body::-webkit-scrollbar { width: 6px; }
+.col-body::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+}
+.col-body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.18); }
+
+.col-empty {
+  margin-top: 2px;
+  padding: 14px 8px;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  color: var(--text-faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ============================ PANEL DE CONFIGURACION ============================ */
+
+.config-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.config-overlay.open { display: flex; }
+
+.config-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: 46px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.config-head h2 { font-size: 13px; font-weight: 600; }
+
+.config-body {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.config-body::-webkit-scrollbar { width: 7px; }
+.config-body::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.config-section { margin-bottom: 20px; }
+.config-section-head { margin-bottom: 9px; }
+
+.config-section h3 {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.config-section-head p {
+  margin-top: 3px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.config-section code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-dim);
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 10.5px;
+}
+
+/* ---- filas de categoria ---- */
+
+.cat-rows { display: flex; flex-direction: column; gap: 6px; }
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-card);
+}
+
+.cat-color {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.cat-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.cat-color::-webkit-color-swatch { border: 0; border-radius: 3px; }
+
+.cat-name, .cat-alias {
+  min-width: 0;
+  height: 27px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  user-select: text;
+}
+
+.cat-name { flex: 0 0 130px; font-weight: 600; }
+.cat-alias { flex: 1; color: var(--text-dim); }
+
+.cat-name:focus, .cat-alias:focus, .sc-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cat-count {
+  flex: none;
+  min-width: 44px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+  text-align: right;
+}
+
+.cat-del {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cat-del:hover { background: rgba(255, 90, 90, 0.16); color: #ff8080; }
+
+/* ---- atajos ---- */
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.shortcut-row label {
+  flex: 0 0 120px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.sc-input {
+  flex: 0 0 200px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.sc-input.capturing {
+  border-color: var(--accent);
+  background: rgba(91, 140, 255, 0.12);
+  color: var(--accent);
+}
+
+/* ---- pie ---- */
+
+.config-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: none;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.config-msg {
+  flex: 1;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.config-msg.error { color: #ff9b9b; }
+.config-msg.ok { color: #2dd4a7; }
+
+.btn-ghost, .btn-primary {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.btn-ghost {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+
+.btn-primary {
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #0f1116;
+}
+
+.btn-primary:hover { filter: brightness(1.1); }
+
+#cat-add { margin-top: 8px; }
+
+.config-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--text-faint);
+  font-size: 10.5px;
+  letter-spacing: 0.3px;
+}
+
+.config-credit img { opacity: 0.75; }
+
+/* ---- edicion del texto de una tarjeta ---- */
+
+.card .text[contenteditable="true"] {
+  outline: none;
+  border-radius: 4px;
+  background: rgba(91, 140, 255, 0.14);
+  box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.3);
+  cursor: text;
+  user-select: text;
+}
+
+/* ---- tablero sin ninguna categoria (instalacion nueva) ---- */
+
+.board-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 20px 32px;
+  text-align: center;
+}
+
+.board-empty-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.board-empty-hint {
+  max-width: 400px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.board-empty-example {
+  margin: 2px 0 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--accent);
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 12.5px;
+}
+
+/* ---- tarjetas ---- */
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  flex: none;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-card);
+  cursor: grab;
+  transition: background 0.12s, border-color 0.12s, transform 0.12s, opacity 0.18s;
+}
+
+.card:hover { background: var(--bg-card-hover); border-color: var(--line-strong); border-left-color: var(--accent); }
+.card:active { cursor: grabbing; }
+
+.card.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+  cursor: grabbing;
+}
+
+.card .check {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  padding: 0;
+  border: 1.5px solid var(--text-faint);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+
+.card .check:hover { border-color: var(--accent); color: var(--accent); }
+.card:hover .check::before { content: '✓'; }
+
+.card .text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  transition: opacity 0.18s;
+}
+
+.card.done { border-left-color: var(--text-faint); }
+.card.done .text { text-decoration: line-through; opacity: 0.4; }
+.card.done .check { background: var(--text-faint); border-color: var(--text-faint); color: var(--bg); }
+.card.done .check::before { content: '✓'; }
+.card.hidden-done { display: none; }
+
+/* ---- toast de deshacer ---- */
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #2b2f39;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.toast-check {
+  color: #2dd4a7;
+  font-size: 12px;
+}
+
+.toast-msg {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.toast-undo {
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.toast-undo:hover { background: rgba(255, 255, 255, 0.14); }
+.toast-undo span { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+.toast-track {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toast-track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+}
+
+.toast.show .toast-track i { animation: drain 5s linear forwards; }
+
+@keyframes drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

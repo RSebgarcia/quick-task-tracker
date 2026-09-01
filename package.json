@@ -1,0 +1,54 @@
+{
+  "name": "task-tracker",
+  "version": "1.0.0",
+  "description": "Captura de tareas sin friccion para Windows. Local, sin red, sin cuentas.",
+  "main": "main.js",
+  "author": "Rodrigo",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "set TT_DEV=1&& electron .",
+    "dist": "electron-builder --win",
+    "test": "node test/run.js"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.rodrigo.tasktracker",
+    "productName": "Task Tracker",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Task Tracker"
+    }
+  },
+  "keywords": [
+    "tasks",
+    "todo",
+    "kanban",
+    "electron",
+    "windows",
+    "productivity",
+    "tray"
+  ]
+}

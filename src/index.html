@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:;">
+  <title>Task Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="mode-capture">
+
+  <!-- ============================ MODO CAPTURA ============================ -->
+  <section id="view-capture" class="view">
+    <div class="bar">
+      <span class="bar-glyph" aria-hidden="true"></span>
+      <input id="capture-input"
+             type="text"
+             autocomplete="off"
+             autocorrect="off"
+             spellcheck="false"
+             placeholder="Nueva tarea…   terminá con  -proyecto  para clasificarla">
+      <kbd class="bar-kbd">Enter</kbd>
+    </div>
+  </section>
+
+  <!-- ============================ MODO TABLERO ============================ -->
+  <section id="view-board" class="view">
+    <div class="panel">
+      <header class="panel-head">
+        <div class="head-left">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <h1>Task Tracker</h1>
+          <span id="total-count" class="total"></span>
+        </div>
+        <div class="head-right">
+          <span id="hint-capture" class="head-hint"></span>
+          <button id="btn-config" class="icon-btn" title="Configuración" aria-label="Configuración">⚙</button>
+          <button id="btn-quit" class="icon-btn" title="Ocultar (la app sigue en la bandeja)" aria-label="Ocultar">✕</button>
+        </div>
+      </header>
+
+      <div id="columns" class="columns"></div>
+
+      <!-- ============ panel de configuración (encima del tablero) ============ -->
+      <div id="config" class="config-overlay">
+        <header class="config-head">
+          <h2>Configuración</h2>
+          <button id="config-close" class="icon-btn" title="Cerrar" aria-label="Cerrar">✕</button>
+        </header>
+
+        <div class="config-body">
+          <section class="config-section">
+            <div class="config-section-head">
+              <h3>Categorías fijas</h3>
+              <p>Las columnas que están siempre, aunque estén vacías. Las temporales que creás al
+                 escribir <code>- nombre</code> siguen apareciendo solas.</p>
+            </div>
+            <div id="config-cats" class="cat-rows"></div>
+            <button id="cat-add" class="btn-ghost">+ Agregar categoría</button>
+          </section>
+
+          <section class="config-section">
+            <div class="config-section-head">
+              <h3>Atajos</h3>
+              <p>Hacé clic en el campo y apretá la combinación que quieras.</p>
+            </div>
+            <div class="shortcut-row">
+              <label for="sc-captura">Barra de captura</label>
+              <input id="sc-captura" class="sc-input" readonly spellcheck="false">
+            </div>
+            <div class="shortcut-row">
+              <label for="sc-tablero">Tablero</label>
+              <input id="sc-tablero" class="sc-input" readonly spellcheck="false">
+            </div>
+          </section>
+
+          <div class="config-credit">
+            <img src="tray-on-dark.png" alt="" width="15" height="15">
+            <span>Designed by InSait</span>
+          </div>
+        </div>
+
+        <footer class="config-foot">
+          <span id="config-msg" class="config-msg"></span>
+          <button id="config-cancel" class="btn-ghost">Cancelar</button>
+          <button id="config-save" class="btn-primary">Guardar</button>
+        </footer>
+      </div>
+
+      <div id="toast" class="toast" role="status">
+        <span class="toast-check" aria-hidden="true">✓</span>
+        <span class="toast-msg">Tarea completada</span>
+        <button id="toast-undo" class="toast-undo">Deshacer <span id="toast-count">5</span></button>
+        <div class="toast-track"><i id="toast-bar"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
